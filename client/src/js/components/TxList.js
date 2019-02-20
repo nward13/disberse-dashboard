@@ -1,10 +1,12 @@
 import React, { Component } from 'react';
-import { BootstrapTable, TableHeaderColumn } from 'react-bootstrap-table';
+// import { BootstrapTable, TableHeaderColumn } from 'react-bootstrap-table';
+import BootstrapTable from 'react-bootstrap-table-next';
 
 // TODO: 
 // paginate transactions table
 // total value for all txs on page
 // make table look a little prettier
+// make table resize better
 // make a page for sending transactions to the contract
 
 const FUNDS_ADDED_STRING = "Deposit";
@@ -180,33 +182,74 @@ export default class TxList extends Component {
     return eventObject.signature;
   }
 
+  formatTimestamp = (val) => {
+    // console.log("cel: ", cell)
+    // console.log("row: ", row)
+    // console.log("index: ", index)
+    return val.toLocaleDateString() + ' ' + val.toLocaleTimeString();
+    
+  }
+
+
   render() {
     
     const displayTxs = this.state.txs;
 
     // Order the transactions according to timestamp
-    if (this.state.reverseOrder) {
-      displayTxs.sort(function(a, b) {
-        return b.timestamp - a.timestamp;
-      });
-    } else {
-      displayTxs.sort(function(a, b) {
-        return a.timestamp - b.timestamp;
-      })
-    }
+    // if (this.state.reverseOrder) {
+    //   displayTxs.sort(function(a, b) {
+    //     return b.timestamp - a.timestamp;
+    //   });
+    // } else {
+    //   displayTxs.sort(function(a, b) {
+    //     return a.timestamp - b.timestamp;
+    //   })
+    // }
+
+    console.log("displayTxs: ", displayTxs)
+
+    // Set columns for table displaying transactions
+    const tableColumns = [{
+      dataField: 'timestamp',
+      text: 'timestamp',
+      sort: true,
+      formatter: this.formatTimestamp,
+      headerAlign: 'center',
+      columnAlign: 'center',
+    }, {
+      dataField: 'transactionHash',
+      text: 'Transaction Hash',
+      headerAlign: 'center',
+      columnAlign: 'center',
+    }, {
+      dataField: 'type',
+      text: 'Type',
+      sort: true,
+      headerAlign: 'center',
+      columnAlign: 'center',
+    }, {
+      dataField: 'value',
+      text: 'Value',
+      sort: true,
+      headerAlign: 'center',
+      columnAlign: 'center',
+    }]
+
+    
     
     return(
-      <BootstrapTable
-        data={displayTxs}
-        options={{ noDataText:'No transactions yet.' }}
-        bordered={true}
-        striped hover condensed>
-        <TableHeaderColumn dataField='date'>Date</TableHeaderColumn>
-        <TableHeaderColumn dataField='time'>Time</TableHeaderColumn>
-        <TableHeaderColumn isKey={true} dataField='transactionHash'>Transaction hash</TableHeaderColumn>
-        <TableHeaderColumn dataField='type'>Transaction Type</TableHeaderColumn>
-        <TableHeaderColumn dataField='value'>Value</TableHeaderColumn>
-      </BootstrapTable>
+      <BootstrapTable keyField='transactionHash' data={ displayTxs } columns={ tableColumns } />
+      // <BootstrapTable
+      //   data={displayTxs}
+      //   options={{ noDataText:'No transactions yet.' }}
+      //   bordered={true}
+      //   striped hover condensed>
+      //   <TableHeaderColumn dataField='date'>Date</TableHeaderColumn>
+      //   <TableHeaderColumn dataField='time'>Time</TableHeaderColumn>
+      //   <TableHeaderColumn isKey={true} dataField='transactionHash'>Transaction hash</TableHeaderColumn>
+      //   <TableHeaderColumn dataField='type'>Transaction Type</TableHeaderColumn>
+      //   <TableHeaderColumn dataField='value'>Value</TableHeaderColumn>
+      // </BootstrapTable>
     )
   }
 }
