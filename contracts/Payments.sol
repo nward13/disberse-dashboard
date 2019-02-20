@@ -29,8 +29,6 @@ contract Payments is Authorization {
     // track users' balances
     mapping (address => uint) public balances;
 
-    uint public num = 3;
-
     /**
     * @dev Allows user to transfer funds to another address
     * @param recipient The recipient of the transfer

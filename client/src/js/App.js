@@ -5,7 +5,8 @@ import getWeb3 from "./utils/getWeb3";
 
 // components
 import Nav from './components/Nav';
-import Blockie from './components/Blockie';
+// import Blockie from './components/Blockie';
+import ActiveAccount from './components/ActiveAccount';
 import TxList from './components/TxList';
 
 import SendTx from './components/SendTx';
@@ -52,16 +53,13 @@ class App extends Component {
           PaymentsContract.abi,
           deployedNetwork && deployedNetwork.address,
         );
-      } else {
-        alert("The Payments contract is not deployed on the active network. Please switch network or deploy the contract.");
-      }
-      // const instance = new web3.eth.Contract(
-      //   PaymentsContract.abi,
-      //   deployedNetwork && deployedNetwork.address,
-      // );
+        console.log("contract address: ", instance.options.address);
+        // Set web3, accounts, network, and the econtract instance to state
+        this.setState({ web3: web3, accounts: accounts, network: network, contract: instance });
 
-      // Set web3, accounts, network, and the econtract instance to state
-      this.setState({ web3: web3, accounts: accounts, network: network, contract: instance });
+      } else {
+        alert("The Payments contract is not deployed on the active network. Please switch networks or deploy the contract on the current network.");
+      }
 
     } catch (error) {
       // Catch any errors for any of the above operations.
@@ -73,15 +71,15 @@ class App extends Component {
   };
 
   render() {
-    const ActiveAddress = (
-      <div className="line">
-        <Blockie address={this.state.accounts[0]} size={3} />
-        <h4 className="address">
-          <strong>Address: </strong> 
-          {this.state.accounts[0]}
-        </h4>
-      </div>
-    );
+    // const ActiveAddress = (
+    //   <div className="line">
+    //     <Blockie address={this.state.accounts[0]} size={3} />
+    //     <h4 className="address">
+    //       <strong>Address: </strong> 
+    //       {this.state.accounts[0]}
+    //     </h4>
+    //   </div>
+    // );
 
     const Network = (<h4><strong>Network:</strong> {this.state.network}</h4>);
 
@@ -91,8 +89,12 @@ class App extends Component {
     return (
       <div className="App">
         <Nav />
-        {ActiveAddress}
         {Network}
+        <ActiveAccount
+          web3={this.state.web3}
+          account={this.state.accounts[0]}
+          contract={this.state.contract}
+        />
         <TxList
           web3={this.state.web3}
           account={this.state.accounts[0]}
