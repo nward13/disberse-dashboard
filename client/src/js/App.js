@@ -1,20 +1,19 @@
+// Utils
 import React, { Component } from "react";
-// import SimpleStorageContract from "./contracts/SimpleStorage.json";
+import { BrowserRouter as Router, Route } from "react-router-dom";
 import PaymentsContract from "../contracts/Payments.json";
 import getWeb3 from "./utils/getWeb3";
 
-// components
+// Components
 import Nav from './components/Nav';
-// import Blockie from './components/Blockie';
 import ActiveAccount from './components/ActiveAccount';
 import TxList from './components/TxList';
-
 import SendTx from './components/SendTx';
 
 // styles
 import "../css/App.css";
 
-class App extends Component {
+export default class App extends Component {
   state = { web3: null, accounts: ['0x0'], network: null, contract: null };
 
   componentDidMount = async () => {
@@ -83,31 +82,39 @@ class App extends Component {
 
     const Network = (<h4><strong>Network:</strong> {this.state.network}</h4>);
 
+    const TxPage = () => (
+      <TxList
+        web3={this.state.web3}
+        account={this.state.accounts[0]}
+        contract={this.state.contract}
+      />
+    );
+
+    const SendPage = () => ( 
+      <SendTx 
+        web3={this.state.web3}
+        account={this.state.accounts[0]}
+        contract={this.state.contract}
+      /> 
+    );
+
     if (!this.state.web3) {
       return <div>Loading web3...</div>;
     }
     return (
-      <div className="App">
-        <Nav />
-        {Network}
-        <ActiveAccount
-          web3={this.state.web3}
-          account={this.state.accounts[0]}
-          contract={this.state.contract}
-        />
-        <TxList
-          web3={this.state.web3}
-          account={this.state.accounts[0]}
-          contract={this.state.contract}
-        />
-        {/* <SendTx
-          web3={this.state.web3}
-          account={this.state.accounts[0]}
-          contract={this.state.contract}
-        /> */}
-      </div>
+      <Router>
+        <div className="App">
+          <Nav />
+          {Network}
+          <ActiveAccount
+            web3={this.state.web3}
+            account={this.state.accounts[0]}
+            contract={this.state.contract}
+          />
+          <Route path="/" exact={true} component={TxPage} />
+          <Route path="/send/" component={SendPage} />
+        </div>
+      </Router>
     );
   }
 }
-
-export default App;

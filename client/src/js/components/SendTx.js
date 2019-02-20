@@ -9,9 +9,9 @@ class SendTx extends Component {
   }
 
   componentWillMount = async() => {
-    const balance = await this.props.contract.methods.balances(this.props.account);
-    console.log("balance: ", balance);
-    this.setState({ balance: balance })
+    // const balance = await this.props.contract.methods.balances(this.props.account);
+    // console.log("balance: ", balance);
+    // this.setState({ balance: balance })
   }
 
 
@@ -21,12 +21,13 @@ class SendTx extends Component {
       <h3>Make a Transfer</h3>
     );
     return(
-      <div className="form sendTx" style={{border:"thin solid black"}}>
-        {this.state.balance > 0
-          ? <h3>Sorry, you have a zero balance.</h3>
-          : {transferForm}
-        }
-      </div>
+      // <div className="form sendTx" style={{border:"thin solid black"}}>
+      //   {this.state.balance > 0
+      //     ? <h3>Sorry, you have a zero balance.</h3>
+      //     : {transferForm}
+      //   }
+      // </div>
+      <p>SendTx Component</p>
     )
   }
 }
