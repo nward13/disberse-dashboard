@@ -1,11 +1,11 @@
 import React, { Component } from 'react';
 import { Form, Button, Container } from 'react-bootstrap';
 
+
 export default class TransferFunds extends Component {
+
   transferFunds = async(event) => {
     event.preventDefault();
-    console.log("transferFunds user: ", this.userTransfer.value)
-    console.log("transferFunds amount: ", this.amountTransfer.value)
     await this.props.contract.methods.transferFunds(
       this.userTransfer.value,
       this.props.web3.utils.toWei(this.amountTransfer.value, 'ether')
@@ -13,6 +13,7 @@ export default class TransferFunds extends Component {
   }
 
   render() {
+
     return (
       <Container>
         <h3>Transfer Funds</h3>
@@ -41,5 +42,6 @@ export default class TransferFunds extends Component {
         </Form>
       </Container>
     );
+
   }
 }

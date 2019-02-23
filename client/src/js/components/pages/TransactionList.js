@@ -1,12 +1,10 @@
 import React, { Component } from 'react';
+import { withRouter } from 'react-router-dom'
 import BootstrapTable from 'react-bootstrap-table-next';
 import paginationFactory from 'react-bootstrap-table2-paginator';
 
 // TODO: 
-// paginate transactions table
-// total value for all txs on page
-// make table look a little prettier
-// make table resize better
+// get 'first' and 'last' buttons back on table pagination?
 // view transactions on etherscan (if on Rinkeby) or go to a page that prints the tx json
 // deploy to rinkeby / IPFS
 // video walkthrough
@@ -21,8 +19,9 @@ import paginationFactory from 'react-bootstrap-table2-paginator';
 // can't pass just as hedata either
 
 // Constants
-const TXS_PER_PAGE = 10;    // number of tranasactions to show in table
-// string contrants for tx type matching and display in table
+// number of transactions to show in table
+const TRANSACTIONS_PER_PAGE = 10;
+// string contants for tx type matching and display in table
 const FUNDS_ADDED_STRING = "Deposit";
 const FUNDS_BURNED_STRING = "Withdrawal";
 const FUNDS_TRANSFERRED_TO_STRING = "Transfer Recieved";
@@ -32,25 +31,26 @@ const ETHERSCAN_MAINNET = "https://etherscan.io/"
 const ETHERSCAN_RINKEBY = "https://rinkeby.etherscan.io/"
 const ETHERSCAN_ROPSTEN = "https://ropsten.etherscan.io/"
 const ETHERSCAN_KOVAN = "https://kovan.etherscan.io/"
-const TX_PREFIX = "tx/"
+const TRANSACTION_PREFIX = "tx/"
 
-export default class TxList extends Component {
+class TransactionList extends Component {
+
   constructor(props) {
     super(props);
 
     this.state = {
-      txCount: null,
-      txs: [],
+      transactionCount: null,
+      transactions: [],
     }
   }
 
   componentWillMount = async () => {
     // get list of transactions impacting the user and update state with the list
-    let txs = await this.getTxList();
-    this.setState({txs:txs});
+    let transactions = await this.getTransactionList();
+    this.setState({transactions: transactions});
   }
 
-  getTxList = async (startBlock=null, endBlock=null) => {
+  getTransactionList = async (startBlock=null, endBlock=null) => {
     // default to searching entire blockchain history
     if (!endBlock) {
       endBlock = 'latest';
@@ -103,7 +103,7 @@ export default class TxList extends Component {
       topics: fundsTransferredFromTopics
     });
 
-    let txs = []
+    let transactions = []
 
     // add tx data for funds added txs
     for (let i = 0; i < fundsAddedEvents.length; i++) {
@@ -112,7 +112,7 @@ export default class TxList extends Component {
       );
       const dateTime = new Date(block.timestamp * 1000);
 
-      const tx = {
+      const transaction = {
         transactionHash: fundsAddedEvents[i].transactionHash,
         type: FUNDS_ADDED_STRING,
         timestamp: dateTime,
@@ -125,7 +125,7 @@ export default class TxList extends Component {
         value: this.props.web3.utils.toBN(fundsAddedEvents[i].data),
       };
 
-      txs.push(tx);
+      transactions.push(transaction);
     }
 
     // add tx data for funds burned txs
@@ -135,7 +135,7 @@ export default class TxList extends Component {
       );
       const dateTime = new Date(block.timestamp * 1000);
 
-      const tx = {
+      const transaction = {
         transactionHash: fundsBurnedEvents[i].transactionHash,
         type: FUNDS_BURNED_STRING,
         timestamp: dateTime,
@@ -148,7 +148,7 @@ export default class TxList extends Component {
         value: this.props.web3.utils.toBN(fundsBurnedEvents[i].data).neg(i),
       };
 
-      txs.push(tx);
+      transactions.push(transaction);
     }
 
     // add tx data for transfers to user
@@ -158,7 +158,7 @@ export default class TxList extends Component {
       );
       const dateTime = new Date(block.timestamp * 1000);
 
-      const tx = {
+      const transaction = {
         transactionHash: fundsTransferredToEvents[i].transactionHash,
         type: FUNDS_TRANSFERRED_TO_STRING,
         timestamp: dateTime,
@@ -171,7 +171,7 @@ export default class TxList extends Component {
         value: this.props.web3.utils.toBN(fundsTransferredToEvents[i].data),
       };
 
-      txs.push(tx);
+      transactions.push(transaction);
     }
 
     // add tx data for transfers from user
@@ -181,7 +181,7 @@ export default class TxList extends Component {
       );
       const dateTime = new Date(block.timestamp * 1000);
 
-      const tx = {
+      const transaction = {
         transactionHash: fundsTransferredFromEvents[i].transactionHash,
         type: FUNDS_TRANSFERRED_FROM_STRING,
         timestamp: dateTime,
@@ -194,10 +194,10 @@ export default class TxList extends Component {
         value: this.props.web3.utils.toBN(fundsTransferredFromEvents[i].data).neg(i),
       };
 
-      txs.push(tx);
+      transactions.push(transaction);
     }
 
-    return txs;
+    return transactions;
   }
 
   // get the event signature from the contract json
@@ -215,48 +215,55 @@ export default class TxList extends Component {
   );
 
   // format "value" column as ether values rather than wei
-  valuesToEth = (val) => (
-    this.props.web3.utils.fromWei(val, 'ether')
+  formatValue = (val) => (
+    this.props.web3.utils.fromWei(val, 'ether') + ' DBT'
   );
 
   // return the total of the displayed values
   valueSum = (columnData) => {
-    console.log("value sum footer called")
-    console.log("columnData: ", columnData)
     var sum = columnData.reduce((total, value) => total.add(value), 
       this.props.web3.utils.toBN(0)
     );
-    return "Total: " + this.props.web3.utils.fromWei(sum, 'ether');
+    // return "Total: " + this.props.web3.utils.fromWei(sum, 'ether');
+    return "Total: " + this.formatValue(sum);
   }
 
-  getEtherscanPath = (txHash) => {
+  getEtherscanPath = (transactionHash) => {
     switch (this.props.network) {
       case 'Mainnet':
-        return ETHERSCAN_MAINNET + TX_PREFIX + txHash;
+        return ETHERSCAN_MAINNET + TRANSACTION_PREFIX + transactionHash;
       case 'Rinkeby':
-        return ETHERSCAN_RINKEBY + TX_PREFIX + txHash;
+        return ETHERSCAN_RINKEBY + TRANSACTION_PREFIX + transactionHash;
       case 'Ropsten':
-        return ETHERSCAN_ROPSTEN + TX_PREFIX + txHash;
+        return ETHERSCAN_ROPSTEN + TRANSACTION_PREFIX + transactionHash;
       case 'Kovan':
-        return ETHERSCAN_KOVAN + TX_PREFIX + txHash;
+        return ETHERSCAN_KOVAN + TRANSACTION_PREFIX + transactionHash;
       default:
         return ETHERSCAN_MAINNET; // just send
     }
   }
 
   transactionDetails = (e, column, columnIndex, row) => {
-    console.log("tx hash: ", row.transactionHash);
-    console.log("etherscan path: ", this.getEtherscanPath(row.transactionHash))
-    // if we're on private network, send to a tx info page
-    // else, send to repective etherscan
+    console.log("transaction details func called")
+    console.log("transaction hash: ", row.transactionHash)
+    if (this.props.network === 'Private') {
+      // private network, so no etherscan. Send to a default page with tx info
+      // return <Redirect push to="/tx/{row.transactionHash}" />;
+      this.props.history.push('/tx/' + row.transactionHash)
+
+      
+    } else {
+      // send to the etherscan page for the tx hash on the active network
+      window.open(this.getEtherscanPath(row.transactionHash));
+    }
   }
 
   render() {
     
     // grab the transactions to display
-    const displayTxs = this.state.txs;
+    const displayTransactions = this.state.transactions;
 
-    console.log("displayTxs: ", displayTxs)
+    console.log("displayTxs: ", displayTransactions)
 
     // Set columns for table displaying transactions
     const tableColumns = [{
@@ -264,33 +271,33 @@ export default class TxList extends Component {
       text: 'timestamp',
       sort: true,
       formatter: this.formatTimestamp,
-      headerAlign: 'center',
       columnAlign: 'center',
-      footer: ''
+      footer: '',   // ugly hack to get final footer column to line up
+      headerStyle: { width: '20%', textAlign: 'center' },
     }, {
       dataField: 'transactionHash',
       text: 'Transaction Hash',
-      headerAlign: 'center',
       columnAlign: 'center',
-      events: { onClick: this.transactionDetails, },
       classes: 'clickable',
       footer: '',
+      events: { onClick: this.transactionDetails, },
+      headerStyle: { width: '35%', textAlign: 'center' },
     }, {
       dataField: 'type',
       text: 'Type',
       sort: true,
-      headerAlign: 'center',
       columnAlign: 'center',
       footer: '',
+      headerStyle: { width: '15%', textAlign: 'center' },
     }, {
       dataField: 'value',
       text: 'Value',
       sort: true,
-      formatter: this.valuesToEth,
-      headerAlign: 'center',
+      formatter: this.formatValue,
       columnAlign: 'center',
       footerAlign: 'center',
-      footer: this.valueSum
+      footer: this.valueSum,
+      headerStyle: { width: '20%', textAlign: 'center' },
     }]
 
     // display the total number of transaction entries
@@ -302,8 +309,9 @@ export default class TxList extends Component {
 
     // declare settings for table pagination
     const paginationOptions = {
-      sizePerPage: TXS_PER_PAGE,
+      sizePerPage: TRANSACTIONS_PER_PAGE,
       pageStartIndex: 1,// const tableColumns
+      withFirstAndLast: true, // Hide the going to First and Last page button
       hidePageListOnlyOnePage: true, // Hide the pagination list when only one page
       hideSizePerPage: true,
       firstPageText: 'First',
@@ -323,7 +331,7 @@ export default class TxList extends Component {
         hover 
         condensed
         keyField='transactionHash' 
-        data={ displayTxs } 
+        data={ displayTransactions } 
         columns={ tableColumns } 
         noDataIndication={ "No transactions yet." }
         pagination={ paginationFactory(paginationOptions) }
@@ -331,3 +339,5 @@ export default class TxList extends Component {
     )
   }
 }
+
+export default withRouter(TransactionList)

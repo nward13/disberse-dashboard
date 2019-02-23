@@ -1,8 +1,8 @@
 import React, { Component } from 'react';
 import Blockie from './Blockie';
-import getWeb3 from '../utils/getWeb3';
 
-class ActiveAccount extends Component {
+export default class ActiveAccount extends Component {
+
   constructor(props) {
     super(props);
 
@@ -31,6 +31,7 @@ class ActiveAccount extends Component {
   }
 
   render() {
+
     return(
       <div>
         <div className="line">
@@ -51,8 +52,7 @@ class ActiveAccount extends Component {
           </h5>
         </div>
       </div>
-    )
+    );
+
   }
 }
-
-export default ActiveAccount;

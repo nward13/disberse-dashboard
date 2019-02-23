@@ -4,7 +4,7 @@
 import React, { Component } from 'react';
 import Blockies from 'react-blockies';
 
-class Blockie extends Component {
+export default class Blockie extends Component {
   render() {
     let address = this.props.address
     if(address && typeof address == "string"){
@@ -21,5 +21,3 @@ class Blockie extends Component {
     )
   }
 }
-
-export default Blockie;
