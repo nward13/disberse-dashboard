@@ -16,7 +16,14 @@ import "../css/App.css";
 
 export default class App extends Component {
   
-  state = { web3: null, account: '0x0', network: null, contract: null };
+  state = { 
+    web3: null, 
+    account: '0x0', 
+    ethBalance: 0,
+    contractBalance: 0,
+    network: null, 
+    contract: null 
+  };
 
   componentDidMount = async () => {
     try {
@@ -25,7 +32,7 @@ export default class App extends Component {
 
       // Use web3 to get the user's accounts
       const accounts = await web3.eth.getAccounts();
-
+      
       // determine active network
       let network;
       const networkId = await web3.eth.net.getId();
@@ -58,13 +65,22 @@ export default class App extends Component {
         console.log("contract: ", instance);
     
         // Set web3, account, network, and the contract instance to state
-        this.setState({ web3: web3, account: accounts[0], network: network, contract: instance });
+        this.setState({ 
+          web3: web3,
+          network: network, 
+          account: accounts[0], 
+          contract: instance,
+        });
+
+        // update the user's ethBalance and contractBalance in state
+        await this.updateBalances();
 
         // poll for metamask account changing
         setInterval(async() => {
           const activeAccount = (await web3.eth.getAccounts())[0];
           if (activeAccount !== this.state.account) {
             this.setState({ account: activeAccount });
+            await this.updateBalances();
           }
         }, 100);
 
@@ -80,6 +96,20 @@ export default class App extends Component {
       console.error(error);
     }
   };
+
+  updateBalances = async () => {
+
+    const ethBalance = await this.state.web3.eth.getBalance(this.state.account);
+
+    const contractBalance = await this.state.contract.methods.balances(
+      this.state.account
+    ).call();
+    
+    this.setState({
+      ethBalance: ethBalance,
+      contractBalance: contractBalance,
+    });
+  }
 
   render() {
     // const ActiveAddress = (
@@ -130,7 +160,8 @@ export default class App extends Component {
           <ActiveAccount
             web3={this.state.web3}
             account={this.state.account}
-            contract={this.state.contract}
+            ethBalance={this.state.ethBalance}
+            contractBalance={this.state.contractBalance}
           />
           <Route path="/" exact={true} component={TransactionListPage} />
           <Route path="/send/" component={SendPage} />
