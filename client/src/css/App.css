@@ -10,6 +10,14 @@
   padding-left: 15px;
 }
 
+.transactionInfo {
+  padding-left: 15px;
+}
+
+.transactionInfo li {
+  margin: 15px 0;
+}
+
 .clickable {
   cursor: pointer;
 }
@@ -38,11 +46,22 @@
   color: #61dafb;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+/* quick hack to make the pretty-printed input data json on tx info page 
+match everything else */
+pre {
+  background-color: #2b3e50;
+  border-color: #2b3e50;
+  color: white;
+}
+
+table {
+  border-collapse:separate; 
+  border-spacing:0.5em;
+}
+
+td, th {
+  font-size: 14.5px;
+  white-space: nowrap; 
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
