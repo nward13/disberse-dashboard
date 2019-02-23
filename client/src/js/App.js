@@ -5,15 +5,17 @@ import PaymentsContract from "../contracts/Payments.json";
 import getWeb3 from "./utils/getWeb3";
 
 // Components
-import Nav from './components/Nav';
-import ActiveAccount from './components/ActiveAccount';
-import TxList from './components/TxList';
-import SendTx from './components/SendTx';
+import Nav from './components/layout/Nav';
+import ActiveAccount from './components/layout/ActiveAccount';
+import TransactionList from './components/pages/TransactionList';
+import SendTransaction from './components/pages/SendTransaction';
+import TransactionInfo from "./components/pages/TransactionInfo.js";
 
 // styles
 import "../css/App.css";
 
 export default class App extends Component {
+  
   state = { web3: null, account: '0x0', network: null, contract: null };
 
   componentDidMount = async () => {
@@ -92,8 +94,8 @@ export default class App extends Component {
 
     const Network = (<h4><strong>Network:</strong> {this.state.network}</h4>);
 
-    const TxPage = () => (
-      <TxList
+    const TransactionListPage = () => (
+      <TransactionList
         web3={this.state.web3}
         account={this.state.account}
         contract={this.state.contract}
@@ -102,11 +104,19 @@ export default class App extends Component {
     );
 
     const SendPage = () => ( 
-      <SendTx 
+      <SendTransaction
         web3={this.state.web3}
         account={this.state.account}
         contract={this.state.contract}
       /> 
+    );
+
+    const TransactionInfoPage = ({ match }) => (
+      <TransactionInfo 
+        web3={this.state.web3}
+        transactionHash={match.params.transactionHash}
+        contractAbi={this.state.contract._jsonInterface}
+      />
     );
 
     if (!this.state.web3) {
@@ -122,8 +132,9 @@ export default class App extends Component {
             account={this.state.account}
             contract={this.state.contract}
           />
-          <Route path="/" exact={true} component={TxPage} />
+          <Route path="/" exact={true} component={TransactionListPage} />
           <Route path="/send/" component={SendPage} />
+          <Route path="/tx/:transactionHash" component={TransactionInfoPage} />
         </div>
       </Router>
     );
