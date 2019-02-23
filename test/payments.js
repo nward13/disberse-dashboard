@@ -46,8 +46,8 @@ contract("Payments", function(accounts) {
   it("Check contract constructor", async() => {
     // check that contract is created as expected
     // owner should be set on deploy
-    expect(await Payments.authorized(owner)).to.eq.BN(1, "owner not set correctly");
-    expect(await Payments.authorized(anyone)).to.eq.BN(0, "authorization not initialized correctly");
+    expect(await Payments.authorized(owner), "owner not set correctly").to.be.true;
+    expect(await Payments.authorized(anyone), "authorization not initialized correctly").to.be.false;
   });
 
 
@@ -62,11 +62,11 @@ contract("Payments", function(accounts) {
 
     // check that owner can successfully add new owners
     addAuthTx = await Payments.addAuthorized(newOwner, {from: owner});
-    expect(await Payments.authorized(newOwner)).to.eq.BN(1, "addAuthorized failed");
+    expect(await Payments.authorized(newOwner), "addAuthorized failed").to.be.true;
 
     // check that newly added owner can use authorized functions
     removeAuthTx = await Payments.removeAuthorized(owner, {from: newOwner});
-    expect(await Payments.authorized(owner)).to.eq.BN(0, "removeAuthorized failed");
+    expect(await Payments.authorized(owner), "removeAuthorized failed").to.be.false;
 
   });
 
