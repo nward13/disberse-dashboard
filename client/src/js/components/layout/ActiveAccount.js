@@ -3,34 +3,19 @@ import Blockie from './Blockie';
 
 export default class ActiveAccount extends Component {
 
-  constructor(props) {
-    super(props);
-
-    this.state = {
-      ethBalance: null,
-      contractBalance: [],
-    }
-  }
-
-  componentWillMount = async () => {
-    
-    // get the eth balance for the active address 
-    let ethBalance = this.props.web3.utils.fromWei(
-      await this.props.web3.eth.getBalance(this.props.account),
-      'ether'
-    );
-
-    // get the balance of the active address in the payments contract
-    let contractBalance = this.props.web3.utils.fromWei(
-      await this.props.contract.methods.balances(this.props.account).call(),
-      'ether'
-    );
-
-    // set the state with the new balances
-    this.setState({ethBalance: ethBalance, contractBalance: contractBalance});
-  }
-
   render() {
+    console.log("this.props.ethBalacne: ", this.props.ethBalance)
+    console.log("this.props.contractBalacen: ", this.props.contractBalance)
+    // put balances into Eth / full tokens (assuming 18 decimal place token)
+    const ethBalanceInEth = this.props.web3.utils.fromWei(
+      this.props.web3.utils.toBN(this.props.ethBalance), 
+      'ether'
+    );
+    
+    const contractBalanceInEth = this.props.web3.utils.fromWei(
+      this.props.web3.utils.toBN(this.props.contractBalance), 
+      'ether'
+    );
 
     return(
       <div>
@@ -44,11 +29,11 @@ export default class ActiveAccount extends Component {
         <div className="balances">
           <h5>
             <strong>ETH balance: </strong>
-            {this.state.ethBalance}
+            {ethBalanceInEth}
           </h5>
           <h5>
             <strong>Contract balance: </strong>
-            {this.state.contractBalance}
+            {contractBalanceInEth}
           </h5>
         </div>
       </div>
