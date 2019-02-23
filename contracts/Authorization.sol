@@ -16,18 +16,18 @@ contract Authorization {
         address indexed remover
     );
 
-    // user address => auth. 1 = authorized, 0 = unauthorized
-    mapping (address => uint) public authorized;
+    // user address => authorized?
+    mapping (address => bool) public authorized;
 
     // authorize deployer of the contract
     constructor() public { 
-        authorized[msg.sender] = 1;
+        authorized[msg.sender] = true;
         emit AuthAdded(address(0), msg.sender);
     }
 
     // require authorization to call function
     modifier auth() {
-        require(authorized[msg.sender] == 1);
+        require(authorized[msg.sender], "Not authorized");
         _;
     }
 
@@ -37,7 +37,7 @@ contract Authorization {
     * @param user the user to authorize
     */
     function addAuthorized(address user) external auth {
-        authorized[user] = 1;
+        authorized[user] = true;
         emit AuthAdded(user, msg.sender);
     }
 
@@ -47,7 +47,7 @@ contract Authorization {
     * @param user The user to de-authorize
     */
     function removeAuthorized(address user) external auth {
-        authorized[user] = 0;
+        authorized[user] = false;
         emit AuthRemoved(user, msg.sender);
     }
 
