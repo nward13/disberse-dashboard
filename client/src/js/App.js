@@ -14,14 +14,14 @@ import SendTx from './components/SendTx';
 import "../css/App.css";
 
 export default class App extends Component {
-  state = { web3: null, accounts: ['0x0'], network: null, contract: null };
+  state = { web3: null, account: '0x0', network: null, contract: null };
 
   componentDidMount = async () => {
     try {
-      // Get network provider and web3 instance.
+      // Get network provider and web3 instance
       const web3 = await getWeb3();
 
-      // Use web3 to get the user's accounts.
+      // Use web3 to get the user's accounts
       const accounts = await web3.eth.getAccounts();
 
       // determine active network
@@ -52,9 +52,19 @@ export default class App extends Component {
           PaymentsContract.abi,
           deployedNetwork && deployedNetwork.address,
         );
-        console.log("contract address: ", instance.options.address);
-        // Set web3, accounts, network, and the econtract instance to state
-        this.setState({ web3: web3, accounts: accounts, network: network, contract: instance });
+
+        console.log("contract: ", instance);
+    
+        // Set web3, account, network, and the contract instance to state
+        this.setState({ web3: web3, account: accounts[0], network: network, contract: instance });
+
+        // poll for metamask account changing
+        setInterval(async() => {
+          const activeAccount = (await web3.eth.getAccounts())[0];
+          if (activeAccount !== this.state.account) {
+            this.setState({ account: activeAccount });
+          }
+        }, 100);
 
       } else {
         alert("The Payments contract is not deployed on the active network. Please switch networks or deploy the contract on the current network.");
@@ -85,15 +95,16 @@ export default class App extends Component {
     const TxPage = () => (
       <TxList
         web3={this.state.web3}
-        account={this.state.accounts[0]}
+        account={this.state.account}
         contract={this.state.contract}
+        network={this.state.network}
       />
     );
 
     const SendPage = () => ( 
       <SendTx 
         web3={this.state.web3}
-        account={this.state.accounts[0]}
+        account={this.state.account}
         contract={this.state.contract}
       /> 
     );
@@ -108,7 +119,7 @@ export default class App extends Component {
           {Network}
           <ActiveAccount
             web3={this.state.web3}
-            account={this.state.accounts[0]}
+            account={this.state.account}
             contract={this.state.contract}
           />
           <Route path="/" exact={true} component={TxPage} />
