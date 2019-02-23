@@ -10,6 +10,14 @@
   padding-left: 15px;
 }
 
+.clickable {
+  cursor: pointer;
+}
+
+.clickable:hover {
+  font-weight: bold;
+}
+
 .App-logo {
   animation: App-logo-spin infinite 20s linear;
   height: 40vmin;

@@ -1,18 +1,38 @@
 import React, { Component } from 'react';
-// import { BootstrapTable, TableHeaderColumn } from 'react-bootstrap-table';
 import BootstrapTable from 'react-bootstrap-table-next';
+import paginationFactory from 'react-bootstrap-table2-paginator';
 
 // TODO: 
 // paginate transactions table
 // total value for all txs on page
 // make table look a little prettier
 // make table resize better
-// make a page for sending transactions to the contract
+// view transactions on etherscan (if on Rinkeby) or go to a page that prints the tx json
+// deploy to rinkeby / IPFS
+// video walkthrough
 
+// TODO:
+// seth send $contract_address "foo(uint)" <value>
+  // if value > max uint32, returns:
+  // seth---to-hexdata: error: invalid hexdata: `0xCannot parse uint256
+  // Caused by:
+  // number too large to fit in target type'
+// Looks like an issue in mod.rs, max uint value for "tokenizing" is u32
+// can't pass just as hedata either
+
+// Constants
+const TXS_PER_PAGE = 10;    // number of tranasactions to show in table
+// string contrants for tx type matching and display in table
 const FUNDS_ADDED_STRING = "Deposit";
 const FUNDS_BURNED_STRING = "Withdrawal";
 const FUNDS_TRANSFERRED_TO_STRING = "Transfer Recieved";
 const FUNDS_TRANSFERRED_FROM_STRING = "Transfer Sent";
+// etherscan prefixes
+const ETHERSCAN_MAINNET = "https://etherscan.io/"
+const ETHERSCAN_RINKEBY = "https://rinkeby.etherscan.io/"
+const ETHERSCAN_ROPSTEN = "https://ropsten.etherscan.io/"
+const ETHERSCAN_KOVAN = "https://kovan.etherscan.io/"
+const TX_PREFIX = "tx/"
 
 export default class TxList extends Component {
   constructor(props) {
@@ -21,12 +41,11 @@ export default class TxList extends Component {
     this.state = {
       txCount: null,
       txs: [],
-      reverseOrder: false,
     }
   }
 
   componentWillMount = async () => {
-    // get the transactions object and update the state
+    // get list of transactions impacting the user and update state with the list
     let txs = await this.getTxList();
     this.setState({txs:txs});
   }
@@ -40,15 +59,19 @@ export default class TxList extends Component {
       startBlock = 1;
     }
 
-    // get event signatures
+    // get event signatures for each type of transaction
     const fundsAddedSignature = this.getEventSignature("FundsAdded");
     const fundsBurnedSignature = this.getEventSignature("FundsBurned");
     const fundsTransferredSignature = this.getEventSignature("FundsTransferred");
 
     // pad active address to match event emission values
-    const accountAsBytes32 = this.props.web3.utils.padLeft(this.props.account, 64).toLowerCase();
+    const accountAsBytes32 = this.props.web3.utils.padLeft(
+      this.props.account, 
+      64
+    ).toLowerCase();
 
-    // determine the filters for each event type
+    // determine the filters for each event type (transfers are broken up into
+    // transfers received by the user and transfers sent by the user)
     const fundsAddedTopics = [fundsAddedSignature, accountAsBytes32];
     const fundsBurnedTopics = [fundsBurnedSignature, accountAsBytes32];
     const fundsTransferredToTopics = [fundsTransferredSignature, null, accountAsBytes32];
@@ -95,10 +118,11 @@ export default class TxList extends Component {
         timestamp: dateTime,
         date: dateTime.toLocaleDateString(),
         time: dateTime.toLocaleTimeString(),
-        value: this.props.web3.utils.fromWei(
-          this.props.web3.utils.toBN(fundsAddedEvents[i].data),
-          'ether'
-        )
+        // value: this.props.web3.utils.fromWei(
+        //   this.props.web3.utils.toBN(fundsAddedEvents[i].data),
+        //   'ether'
+        // )
+        value: this.props.web3.utils.toBN(fundsAddedEvents[i].data),
       };
 
       txs.push(tx);
@@ -117,10 +141,11 @@ export default class TxList extends Component {
         timestamp: dateTime,
         date: dateTime.toLocaleDateString(),
         time: dateTime.toLocaleTimeString(),
-        value: this.props.web3.utils.fromWei(
-          this.props.web3.utils.toBN(fundsBurnedEvents[i].data).neg(i),
-          'ether'
-        )
+        // value: this.props.web3.utils.fromWei(
+        //   this.props.web3.utils.toBN(fundsBurnedEvents[i].data).neg(i),
+        //   'ether'
+        // )
+        value: this.props.web3.utils.toBN(fundsBurnedEvents[i].data).neg(i),
       };
 
       txs.push(tx);
@@ -139,10 +164,11 @@ export default class TxList extends Component {
         timestamp: dateTime,
         date: dateTime.toLocaleDateString(),
         time: dateTime.toLocaleTimeString(),
-        value: this.props.web3.utils.fromWei(
-          this.props.web3.utils.toBN(fundsTransferredToEvents[i].data),
-          'ether'
-        )
+        // value: this.props.web3.utils.fromWei(
+        //   this.props.web3.utils.toBN(fundsTransferredToEvents[i].data),
+        //   'ether'
+        // )
+        value: this.props.web3.utils.toBN(fundsTransferredToEvents[i].data),
       };
 
       txs.push(tx);
@@ -161,10 +187,11 @@ export default class TxList extends Component {
         timestamp: dateTime,
         date: dateTime.toLocaleDateString(),
         time: dateTime.toLocaleTimeString(),
-        value: this.props.web3.utils.fromWei(
-          this.props.web3.utils.toBN(fundsTransferredFromEvents[i].data).neg(i),
-          'ether'
-        )
+        // value: this.props.web3.utils.fromWei(
+        //   this.props.web3.utils.toBN(fundsTransferredFromEvents[i].data).neg(i),
+        //   'ether'
+        // )
+        value: this.props.web3.utils.toBN(fundsTransferredFromEvents[i].data).neg(i),
       };
 
       txs.push(tx);
@@ -182,29 +209,52 @@ export default class TxList extends Component {
     return eventObject.signature;
   }
 
-  formatTimestamp = (val) => {
-    // console.log("cel: ", cell)
-    // console.log("row: ", row)
-    // console.log("index: ", index)
-    return val.toLocaleDateString() + ' ' + val.toLocaleTimeString();
-    
+  // format timestamp as date string + time string
+  formatTimestamp = (val) => (
+    val.toLocaleDateString() + ' ' + val.toLocaleTimeString()
+  );
+
+  // format "value" column as ether values rather than wei
+  valuesToEth = (val) => (
+    this.props.web3.utils.fromWei(val, 'ether')
+  );
+
+  // return the total of the displayed values
+  valueSum = (columnData) => {
+    console.log("value sum footer called")
+    console.log("columnData: ", columnData)
+    var sum = columnData.reduce((total, value) => total.add(value), 
+      this.props.web3.utils.toBN(0)
+    );
+    return "Total: " + this.props.web3.utils.fromWei(sum, 'ether');
   }
 
+  getEtherscanPath = (txHash) => {
+    switch (this.props.network) {
+      case 'Mainnet':
+        return ETHERSCAN_MAINNET + TX_PREFIX + txHash;
+      case 'Rinkeby':
+        return ETHERSCAN_RINKEBY + TX_PREFIX + txHash;
+      case 'Ropsten':
+        return ETHERSCAN_ROPSTEN + TX_PREFIX + txHash;
+      case 'Kovan':
+        return ETHERSCAN_KOVAN + TX_PREFIX + txHash;
+      default:
+        return ETHERSCAN_MAINNET; // just send
+    }
+  }
+
+  transactionDetails = (e, column, columnIndex, row) => {
+    console.log("tx hash: ", row.transactionHash);
+    console.log("etherscan path: ", this.getEtherscanPath(row.transactionHash))
+    // if we're on private network, send to a tx info page
+    // else, send to repective etherscan
+  }
 
   render() {
     
+    // grab the transactions to display
     const displayTxs = this.state.txs;
-
-    // Order the transactions according to timestamp
-    // if (this.state.reverseOrder) {
-    //   displayTxs.sort(function(a, b) {
-    //     return b.timestamp - a.timestamp;
-    //   });
-    // } else {
-    //   displayTxs.sort(function(a, b) {
-    //     return a.timestamp - b.timestamp;
-    //   })
-    // }
 
     console.log("displayTxs: ", displayTxs)
 
@@ -216,40 +266,68 @@ export default class TxList extends Component {
       formatter: this.formatTimestamp,
       headerAlign: 'center',
       columnAlign: 'center',
+      footer: ''
     }, {
       dataField: 'transactionHash',
       text: 'Transaction Hash',
       headerAlign: 'center',
       columnAlign: 'center',
+      events: { onClick: this.transactionDetails, },
+      classes: 'clickable',
+      footer: '',
     }, {
       dataField: 'type',
       text: 'Type',
       sort: true,
       headerAlign: 'center',
       columnAlign: 'center',
+      footer: '',
     }, {
       dataField: 'value',
       text: 'Value',
       sort: true,
+      formatter: this.valuesToEth,
       headerAlign: 'center',
       columnAlign: 'center',
+      footerAlign: 'center',
+      footer: this.valueSum
     }]
 
-    
-    
+    // display the total number of transaction entries
+    const customTotal = (from, to, size) => (
+      <span className="react-bootstrap-table-pagination-total">
+        Showing { from } to { to } of { size } Transactions
+      </span>
+    );
+
+    // declare settings for table pagination
+    const paginationOptions = {
+      sizePerPage: TXS_PER_PAGE,
+      pageStartIndex: 1,// const tableColumns
+      hidePageListOnlyOnePage: true, // Hide the pagination list when only one page
+      hideSizePerPage: true,
+      firstPageText: 'First',
+      prePageText: 'Back',
+      nextPageText: 'Next',
+      lastPageText: 'Last',
+      nextPageTitle: 'First page',
+      prePageTitle: 'Prev page',
+      firstPageTitle: 'Next page',
+      lastPageTitle: 'Last page',
+      showTotal: true,
+      paginationTotalRenderer: customTotal,
+    };
+
     return(
-      <BootstrapTable keyField='transactionHash' data={ displayTxs } columns={ tableColumns } />
-      // <BootstrapTable
-      //   data={displayTxs}
-      //   options={{ noDataText:'No transactions yet.' }}
-      //   bordered={true}
-      //   striped hover condensed>
-      //   <TableHeaderColumn dataField='date'>Date</TableHeaderColumn>
-      //   <TableHeaderColumn dataField='time'>Time</TableHeaderColumn>
-      //   <TableHeaderColumn isKey={true} dataField='transactionHash'>Transaction hash</TableHeaderColumn>
-      //   <TableHeaderColumn dataField='type'>Transaction Type</TableHeaderColumn>
-      //   <TableHeaderColumn dataField='value'>Value</TableHeaderColumn>
-      // </BootstrapTable>
+      <BootstrapTable 
+        hover 
+        condensed
+        keyField='transactionHash' 
+        data={ displayTxs } 
+        columns={ tableColumns } 
+        noDataIndication={ "No transactions yet." }
+        pagination={ paginationFactory(paginationOptions) }
+      />
     )
   }
 }
