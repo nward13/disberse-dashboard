@@ -21,6 +21,7 @@ export default class TransactionInfo extends Component {
       this.props.transactionHash
     );
 
+    // update state with the transaction data
     this.setState({ transaction: transaction })
   }
   

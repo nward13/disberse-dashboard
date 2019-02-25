@@ -4,6 +4,8 @@ import { Form, Button, Container } from 'react-bootstrap';
 
 export default class TransferFunds extends Component {
 
+  // send transferFunds tx to contract with params from form.
+  // todo: form validation
   transferFunds = async(event) => {
     event.preventDefault();
     await this.props.contract.methods.transferFunds(
@@ -29,7 +31,7 @@ export default class TransferFunds extends Component {
             />
           </Form.Group>
           <Form.Group>
-            <Form.Label htmlFor="amount">Amount (in full tokens)</Form.Label>
+            <Form.Label htmlFor="amount">Amount (DBT)</Form.Label>
             <Form.Control
               type="number" 
               ref={(input) => { this.amountTransfer=input; }} 

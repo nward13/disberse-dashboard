@@ -2,10 +2,11 @@ import React, { Component } from 'react';
 import { Form, Button, Container } from 'react-bootstrap';
 
 export default class BurnFunds extends Component {
+
+  // send burnFunds tx to contract with params from form.
+  // todo: form validation
   burnFunds = async(event) => {
     event.preventDefault();
-    console.log("burnFunds user: ", this.userBurn.value)
-    console.log("burnFunds amount: ", this.amountBurn.value)
     await this.props.contract.methods.burnFunds(
       this.userBurn.value,
       this.props.web3.utils.toWei(this.amountBurn.value, 'ether')
@@ -28,7 +29,7 @@ export default class BurnFunds extends Component {
             />
           </Form.Group>
           <Form.Group>
-            <Form.Label htmlFor="amount">Amount (in full tokens)</Form.Label>
+            <Form.Label htmlFor="amount">Amount (DBT)</Form.Label>
             <Form.Control
               type="number" 
               ref={(input) => { this.amountBurn=input; }} 

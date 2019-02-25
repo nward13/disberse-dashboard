@@ -4,8 +4,6 @@ import Blockie from './Blockie';
 export default class ActiveAccount extends Component {
 
   render() {
-    console.log("this.props.ethBalacne: ", this.props.ethBalance)
-    console.log("this.props.contractBalacen: ", this.props.contractBalance)
     // put balances into Eth / full tokens (assuming 18 decimal place token)
     const ethBalanceInEth = this.props.web3.utils.fromWei(
       this.props.web3.utils.toBN(this.props.ethBalance), 

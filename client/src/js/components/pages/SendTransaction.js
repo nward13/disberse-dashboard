@@ -17,15 +17,19 @@ export default class SendTransaction extends Component {
   }
 
   componentWillMount = async() => {
+    // determine if user is authorized user and / or has a positive balance,
+    // as this determines which forms we show them
     const balance = await this.props.contract.methods.balances(this.props.account).call();
     const auth = await this.props.contract.methods.authorized(this.props.account).call();
 
+    // update state with users balance and authorized/unauthorized
     this.setState({ balance: balance, auth: auth });
   }
 
 
   render() {
 
+    // functions for authorized users (addFunds, burnFunds)
     const AuthFunctions = () => {
       if (this.state.auth) {
         return (
@@ -47,6 +51,7 @@ export default class SendTransaction extends Component {
       }
     }
 
+    // standard user functions (transferFunds or a deposit funds instruction)
     const UserFunctions = () => {
       if (this.state.balance > 0) {
         return (
