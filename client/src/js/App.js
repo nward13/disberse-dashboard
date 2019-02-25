@@ -60,10 +60,9 @@ export default class App extends Component {
 
       // get contract instance
       const deployedNetwork = PaymentsContract.networks[networkId];
-      let instance;
 
       // if active network is local testchain and contract is deployed on it
-      if (network == 'Private' && deployedNetwork !== undefined) {
+      if (network === 'Private' && deployedNetwork !== undefined) {
 
         // get web3 contract instance on local testnet
         const contractInstance = this.getContractInstance(
@@ -86,7 +85,7 @@ export default class App extends Component {
         // set a listener for a change in the active account
         this.setAccountChangeListener();
 
-      } else if (network == 'Rinkeby') {
+      } else if (network === 'Rinkeby') {
         // if active network is Rinkeby, we have hardcoded address for 
         // contract instance
 
