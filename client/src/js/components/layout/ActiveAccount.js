@@ -6,12 +6,12 @@ export default class ActiveAccount extends Component {
   render() {
     // put balances into Eth / full tokens (assuming 18 decimal place token)
     const ethBalanceInEth = this.props.web3.utils.fromWei(
-      this.props.web3.utils.toBN(this.props.ethBalance), 
+      this.props.ethBalance.toString(), 
       'ether'
     );
     
     const contractBalanceInEth = this.props.web3.utils.fromWei(
-      this.props.web3.utils.toBN(this.props.contractBalance), 
+      this.props.contractBalance.toString(), 
       'ether'
     );
 

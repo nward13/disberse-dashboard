@@ -194,7 +194,7 @@ class TransactionList extends Component {
 
   // format "value" column as ether values rather than wei
   formatValue = (val) => (
-    this.props.web3.utils.fromWei(val, 'ether') + ' DBT'
+    this.props.web3.utils.fromWei(val.toString(), 'ether') + ' DBT'
   );
 
   // return the total of the displayed values
