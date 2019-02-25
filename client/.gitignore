@@ -11,8 +11,10 @@
 # production
 /build
 
-# contract abis
-/src/contracts
+# contract abis - include Payments abi so locally-running front end can
+# interact with rinkeby contract without compiling contracts locally
+/src/contracts/*
+!/src/contracts/Payments.json
 
 # misc
 .DS_Store
