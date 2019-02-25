@@ -3,21 +3,6 @@ import { withRouter } from 'react-router-dom'
 import BootstrapTable from 'react-bootstrap-table-next';
 import paginationFactory from 'react-bootstrap-table2-paginator';
 
-// TODO: 
-// get 'first' and 'last' buttons back on table pagination?
-// view transactions on etherscan (if on Rinkeby) or go to a page that prints the tx json
-// deploy to rinkeby / IPFS
-// video walkthrough
-
-// TODO:
-// seth send $contract_address "foo(uint)" <value>
-  // if value > max uint32, returns:
-  // seth---to-hexdata: error: invalid hexdata: `0xCannot parse uint256
-  // Caused by:
-  // number too large to fit in target type'
-// Looks like an issue in mod.rs, max uint value for "tokenizing" is u32
-// can't pass just as hedata either
-
 // Constants
 // number of transactions to show in table
 const TRANSACTIONS_PER_PAGE = 10;
@@ -44,10 +29,19 @@ class TransactionList extends Component {
     }
   }
 
-  componentWillMount = async () => {
+  componentDidMount = async () => {
+    // prevent setting state on unmounted component
+    this._isMounted = true;
+
     // get list of transactions impacting the user and update state with the list
     let transactions = await this.getTransactionList();
-    this.setState({transactions: transactions});
+    if (this._isMounted) { 
+      this.setState({transactions: transactions}) 
+    };
+  }
+
+  componentWillUnmount = () => {
+    this._isMounted = false;
   }
 
   getTransactionList = async (startBlock=null, endBlock=null) => {
@@ -118,10 +112,6 @@ class TransactionList extends Component {
         timestamp: dateTime,
         date: dateTime.toLocaleDateString(),
         time: dateTime.toLocaleTimeString(),
-        // value: this.props.web3.utils.fromWei(
-        //   this.props.web3.utils.toBN(fundsAddedEvents[i].data),
-        //   'ether'
-        // )
         value: this.props.web3.utils.toBN(fundsAddedEvents[i].data),
       };
 
@@ -141,10 +131,6 @@ class TransactionList extends Component {
         timestamp: dateTime,
         date: dateTime.toLocaleDateString(),
         time: dateTime.toLocaleTimeString(),
-        // value: this.props.web3.utils.fromWei(
-        //   this.props.web3.utils.toBN(fundsBurnedEvents[i].data).neg(i),
-        //   'ether'
-        // )
         value: this.props.web3.utils.toBN(fundsBurnedEvents[i].data).neg(i),
       };
 
@@ -164,10 +150,6 @@ class TransactionList extends Component {
         timestamp: dateTime,
         date: dateTime.toLocaleDateString(),
         time: dateTime.toLocaleTimeString(),
-        // value: this.props.web3.utils.fromWei(
-        //   this.props.web3.utils.toBN(fundsTransferredToEvents[i].data),
-        //   'ether'
-        // )
         value: this.props.web3.utils.toBN(fundsTransferredToEvents[i].data),
       };
 
@@ -187,10 +169,6 @@ class TransactionList extends Component {
         timestamp: dateTime,
         date: dateTime.toLocaleDateString(),
         time: dateTime.toLocaleTimeString(),
-        // value: this.props.web3.utils.fromWei(
-        //   this.props.web3.utils.toBN(fundsTransferredFromEvents[i].data).neg(i),
-        //   'ether'
-        // )
         value: this.props.web3.utils.toBN(fundsTransferredFromEvents[i].data).neg(i),
       };
 
@@ -228,6 +206,7 @@ class TransactionList extends Component {
     return "Total: " + this.formatValue(sum);
   }
 
+  // return the url to view the transaction hash on etherscan on the active network
   getEtherscanPath = (transactionHash) => {
     switch (this.props.network) {
       case 'Mainnet':
@@ -239,18 +218,15 @@ class TransactionList extends Component {
       case 'Kovan':
         return ETHERSCAN_KOVAN + TRANSACTION_PREFIX + transactionHash;
       default:
-        return ETHERSCAN_MAINNET; // just send
+        return ETHERSCAN_MAINNET; // just send them to the mainnet etherscan / page
     }
   }
 
   transactionDetails = (e, column, columnIndex, row) => {
-    console.log("transaction details func called")
-    console.log("transaction hash: ", row.transactionHash)
     if (this.props.network === 'Private') {
-      // private network, so no etherscan. Send to a default page with tx info
-      // return <Redirect push to="/tx/{row.transactionHash}" />;
-      this.props.history.push('/tx/' + row.transactionHash)
 
+      // private network, so no etherscan. Send to a default page with tx info
+      this.props.history.push('/tx/' + row.transactionHash)
       
     } else {
       // send to the etherscan page for the tx hash on the active network
@@ -262,8 +238,6 @@ class TransactionList extends Component {
     
     // grab the transactions to display
     const displayTransactions = this.state.transactions;
-
-    console.log("displayTxs: ", displayTransactions)
 
     // Set columns for table displaying transactions
     const tableColumns = [{
@@ -300,6 +274,12 @@ class TransactionList extends Component {
       headerStyle: { width: '20%', textAlign: 'center' },
     }]
 
+    // sort by timestamp initially
+    const defaultSorted = [{
+      dataField: 'timestamp',
+      order: 'desc'
+    }];
+
     // display the total number of transaction entries
     const customTotal = (from, to, size) => (
       <span className="react-bootstrap-table-pagination-total">
@@ -310,6 +290,7 @@ class TransactionList extends Component {
     // declare settings for table pagination
     const paginationOptions = {
       sizePerPage: TRANSACTIONS_PER_PAGE,
+      paginationSize:3,
       pageStartIndex: 1,// const tableColumns
       withFirstAndLast: true, // Hide the going to First and Last page button
       hidePageListOnlyOnePage: true, // Hide the pagination list when only one page
@@ -335,6 +316,7 @@ class TransactionList extends Component {
         columns={ tableColumns } 
         noDataIndication={ "No transactions yet." }
         pagination={ paginationFactory(paginationOptions) }
+        defaultSorted={ defaultSorted }
       />
     )
   }
