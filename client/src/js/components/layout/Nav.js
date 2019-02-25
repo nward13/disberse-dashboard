@@ -20,6 +20,7 @@ export default class Nav extends Component {
 
           <div className="collapse navbar-collapse" id="bs-example-navbar-collapse-2">
             <ul className="nav navbar-nav">
+              <li><a href="https://github.com/nward13/disberse-dashboard" target="_blank">About</a></li>
               <li><Link to={"/send/"}>Make a Transfer</Link></li>
             </ul>
           </div>
