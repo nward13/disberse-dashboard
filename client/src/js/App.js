@@ -14,6 +14,9 @@ import TransactionInfo from "./components/pages/TransactionInfo.js";
 // styles
 import "../css/App.css";
 
+// contract deployment on rinkeby
+const RINKEBY_CONTRACT_ADDRESS= '0x584aef3404b15b45aceee7426eb8e9d24754c11b';
+
 export default class App extends Component {
   
   state = { 
@@ -25,28 +28,30 @@ export default class App extends Component {
     contract: null 
   };
 
+
+  // todo: fix memory leak and unset account change listener in componentWillUnmount
   componentDidMount = async () => {
     try {
       // Get network provider and web3 instance
       const web3 = await getWeb3();
 
       // Use web3 to get the user's accounts
-      const accounts = await web3.eth.getAccounts();
+      const account = (await web3.eth.getAccounts())[0];
       
       // determine active network
       let network;
       const networkId = await web3.eth.net.getId();
       switch(networkId) {
-        case '1':
+        case 1:
           network = 'Mainnet';
           break;
-        case '3':
+        case 3:
           network = 'Ropsten';
           break;
-        case '4':
+        case 4:
           network = 'Rinkeby';
           break;
-        case '42':
+        case 42:
           network = 'Kovan';
           break;
         default:
@@ -56,33 +61,55 @@ export default class App extends Component {
       // get contract instance
       const deployedNetwork = PaymentsContract.networks[networkId];
       let instance;
-      if (deployedNetwork !== undefined) {
-        instance = new web3.eth.Contract(
-          PaymentsContract.abi,
-          deployedNetwork && deployedNetwork.address,
+
+      // if active network is local testchain and contract is deployed on it
+      if (network == 'Private' && deployedNetwork !== undefined) {
+
+        // get web3 contract instance on local testnet
+        const contractInstance = this.getContractInstance(
+          web3,
+          PaymentsContract.abi, 
+          deployedNetwork.address
         );
 
-        console.log("contract: ", instance);
-    
+       // Set web3, account, network, and the contract instance to state
+        this.setState({ 
+          web3: web3,
+          network: network, 
+          account: account, 
+          contract: contractInstance,
+        });
+        
+        // update the user's ethBalance and contractBalance in state
+        await this.updateBalances();
+
+        // set a listener for a change in the active account
+        this.setAccountChangeListener();
+
+      } else if (network == 'Rinkeby') {
+        // if active network is Rinkeby, we have hardcoded address for 
+        // contract instance
+
+        // get web3 instance of the contract
+        const contractInstance = this.getContractInstance(
+          web3, 
+          PaymentsContract.abi, 
+          RINKEBY_CONTRACT_ADDRESS
+        );
+          
         // Set web3, account, network, and the contract instance to state
         this.setState({ 
           web3: web3,
           network: network, 
-          account: accounts[0], 
-          contract: instance,
+          account: account, 
+          contract: contractInstance,
         });
 
         // update the user's ethBalance and contractBalance in state
         await this.updateBalances();
 
-        // poll for metamask account changing
-        setInterval(async() => {
-          const activeAccount = (await web3.eth.getAccounts())[0];
-          if (activeAccount !== this.state.account) {
-            this.setState({ account: activeAccount });
-            await this.updateBalances();
-          }
-        }, 100);
+        // set a listener for a change in the active account
+        this.setAccountChangeListener();
 
       } else {
         alert("The Payments contract is not deployed on the active network. Please switch networks or deploy the contract on the current network.");
@@ -97,14 +124,33 @@ export default class App extends Component {
     }
   };
 
+  getContractInstance = (web3, abi, deployedAddress) => {
+    // return a web3 contract instance at the designated address
+    return new web3.eth.Contract(abi, deployedAddress);
+
+  }
+
+  setAccountChangeListener = async () => {
+    // poll for metamask account changing
+    setInterval(async() => {
+      const activeAccount = (await this.state.web3.eth.getAccounts())[0];
+      if (activeAccount !== this.state.account) {
+        this.setState({ account: activeAccount });
+        await this.updateBalances();
+      }
+    }, 100);
+  }
+
   updateBalances = async () => {
 
     const ethBalance = await this.state.web3.eth.getBalance(this.state.account);
 
+    // balance in our contract
     const contractBalance = await this.state.contract.methods.balances(
       this.state.account
     ).call();
     
+    // update state with both balances
     this.setState({
       ethBalance: ethBalance,
       contractBalance: contractBalance,
@@ -112,18 +158,11 @@ export default class App extends Component {
   }
 
   render() {
-    // const ActiveAddress = (
-    //   <div className="line">
-    //     <Blockie address={this.state.accounts[0]} size={3} />
-    //     <h4 className="address">
-    //       <strong>Address: </strong> 
-    //       {this.state.accounts[0]}
-    //     </h4>
-    //   </div>
-    // );
 
+    // display active network
     const Network = (<h4><strong>Network:</strong> {this.state.network}</h4>);
 
+    // main page with that displays user transaction history
     const TransactionListPage = () => (
       <TransactionList
         web3={this.state.web3}
@@ -133,6 +172,7 @@ export default class App extends Component {
       />
     );
 
+    // page for interactiong with the contract 
     const SendPage = () => ( 
       <SendTransaction
         web3={this.state.web3}
@@ -141,6 +181,8 @@ export default class App extends Component {
       /> 
     );
 
+    // if on Rinkeby, transaction hashes link to etherscan. If on local
+    // testchain, show our own transaction info page
     const TransactionInfoPage = ({ match }) => (
       <TransactionInfo 
         web3={this.state.web3}
